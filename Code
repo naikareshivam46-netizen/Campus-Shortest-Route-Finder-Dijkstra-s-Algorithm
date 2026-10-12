@@ -1,0 +1,339 @@
+#include <stdio.h>
+#include <string.h>
+
+#define SIZE 20
+#define INF 99999
+
+char places[SIZE][50];
+int cost[SIZE][SIZE];
+int distance[SIZE];
+int previous[SIZE];
+int marked[SIZE];
+int totalPlaces = 0;
+
+int start = -1;
+int resultReady = 0;
+
+void createMap();
+void showMap();
+void chooseStart();
+void findShortestRoutes();
+void showRoutes();
+void showDistances();
+void printRoute(int);
+
+void createMap()
+{
+    int i, j, value;
+
+    printf("\nEnter number of places (1-%d): ", SIZE);
+    scanf("%d", &totalPlaces);
+
+    if (totalPlaces < 1 || totalPlaces > SIZE)
+    {
+        printf("Invalid number of places.\n");
+        totalPlaces = 0;
+        return;
+    }
+
+    for (i = 0; i < totalPlaces; i++)
+    {
+        printf("Enter name of place %d: ", i + 1);
+        scanf(" %49[^\n]", places[i]);
+    }
+
+    printf("\nEnter distance between places.\n");
+    printf("Enter 0 for the same place.\n");
+    printf("Enter %d if there is no direct route.\n", INF);
+    printf("Distance cannot be negative.\n\n");
+
+    for (i = 0; i < totalPlaces; i++)
+    {
+        for (j = 0; j < totalPlaces; j++)
+        {
+            printf("Distance from %s to %s: ",
+                   places[i], places[j]);
+
+            scanf("%d", &value);
+
+            if (i == j)
+                cost[i][j] = 0;
+            else if (value == INF)
+                cost[i][j] = INF;
+            else if (value < 0)
+            {
+                printf("Negative distance not allowed.\n");
+                cost[i][j] = INF;
+            }
+            else
+                cost[i][j] = value;
+        }
+    }
+
+    start = -1;
+    resultReady = 0;
+
+    printf("\nMap created successfully.\n");
+}
+
+void showMap()
+{
+    int i, j;
+
+    if (totalPlaces == 0)
+    {
+        printf("\nPlease create the map first.\n");
+        return;
+    }
+
+    printf("\n========== DISTANCE MATRIX ==========\n\n");
+
+    printf("%-20s", "");
+
+    for (i = 0; i < totalPlaces; i++)
+        printf("%-10d", i + 1);
+
+    printf("\n");
+
+    for (i = 0; i < totalPlaces; i++)
+    {
+        printf("%-20s", places[i]);
+
+        for (j = 0; j < totalPlaces; j++)
+        {
+            if (cost[i][j] == INF)
+                printf("%-10s", "INF");
+            else
+                printf("%-10d", cost[i][j]);
+        }
+
+        printf("\n");
+    }
+}
+
+void chooseStart()
+{
+    int option;
+
+    if (totalPlaces == 0)
+    {
+        printf("\nPlease create the map first.\n");
+        return;
+    }
+
+    printf("\n========== SELECT STARTING PLACE ==========\n");
+
+    for (int i = 0; i < totalPlaces; i++)
+        printf("%d. %s\n", i + 1, places[i]);
+
+    printf("Enter starting place: ");
+    scanf("%d", &option);
+
+    if (option < 1 || option > totalPlaces)
+    {
+        printf("Invalid selection.\n");
+        return;
+    }
+
+    start = option - 1;
+    resultReady = 0;
+
+    printf("Starting place: %s\n", places[start]);
+}
+
+void findShortestRoutes()
+{
+    int i, j, count;
+    int current;
+    int smallest;
+
+    if (totalPlaces == 0)
+    {
+        printf("\nPlease create the map first.\n");
+        return;
+    }
+
+    if (start == -1)
+    {
+        printf("\nPlease select a starting place first.\n");
+        return;
+    }
+
+    for (i = 0; i < totalPlaces; i++)
+    {
+        distance[i] = INF;
+        previous[i] = -1;
+        marked[i] = 0;
+    }
+
+    distance[start] = 0;
+
+    for (count = 0; count < totalPlaces - 1; count++)
+    {
+        current = -1;
+        smallest = INF;
+
+        for (i = 0; i < totalPlaces; i++)
+        {
+            if (marked[i] == 0 && distance[i] < smallest)
+            {
+                smallest = distance[i];
+                current = i;
+            }
+        }
+
+        if (current == -1)
+            break;
+
+        marked[current] = 1;
+
+        for (j = 0; j < totalPlaces; j++)
+        {
+            if (marked[j] == 0 &&
+                cost[current][j] != INF &&
+                distance[current] != INF &&
+                distance[current] + cost[current][j] < distance[j])
+            {
+                distance[j] = distance[current] + cost[current][j];
+                previous[j] = current;
+            }
+        }
+    }
+
+    resultReady = 1;
+
+    printf("\nShortest routes calculated successfully.\n");
+}
+
+void printRoute(int destination)
+{
+    if (destination == -1)
+        return;
+
+    if (previous[destination] == -1)
+    {
+        printf("%s", places[destination]);
+        return;
+    }
+
+    printRoute(previous[destination]);
+    printf(" -> %s", places[destination]);
+}
+
+void showRoutes()
+{
+    int i;
+
+    if (resultReady == 0)
+    {
+        printf("\nPlease run Dijkstra's algorithm first.\n");
+        return;
+    }
+
+    printf("\n========== SHORTEST ROUTES ==========\n");
+    printf("Starting from: %s\n\n", places[start]);
+
+    for (i = 0; i < totalPlaces; i++)
+    {
+        if (i == start)
+            continue;
+
+        printf("%-20s : ", places[i]);
+
+        if (distance[i] == INF)
+            printf("No route available\n");
+        else
+        {
+            printRoute(i);
+            printf("\n");
+        }
+    }
+}
+
+void showDistances()
+{
+    int i;
+
+    if (resultReady == 0)
+    {
+        printf("\nPlease run Dijkstra's algorithm first.\n");
+        return;
+    }
+
+    printf("\n========== SHORTEST DISTANCES ==========\n");
+    printf("Starting from: %s\n\n", places[start]);
+
+    printf("%-25s %-15s\n", "Destination", "Distance");
+
+    for (i = 0; i < totalPlaces; i++)
+    {
+        if (i == start)
+            continue;
+
+        if (distance[i] == INF)
+            printf("%-25s %-15s\n", places[i], "INF");
+        else
+            printf("%-25s %-15d\n", places[i], distance[i]);
+    }
+}
+
+int main()
+{
+    int choice;
+
+    do
+    {
+        printf("\n============================================\n");
+        printf("       CITY SHORTEST ROUTE FINDER\n");
+        printf("         DIJKSTRA ALGORITHM\n");
+        printf("============================================\n");
+
+        printf("1. Create Route Map\n");
+        printf("2. Display Distance Matrix\n");
+        printf("3. Select Starting Place\n");
+        printf("4. Calculate Shortest Routes\n");
+        printf("5. Display Shortest Routes\n");
+        printf("6. Display Shortest Distances\n");
+        printf("7. Exit\n");
+
+        printf("\nEnter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice)
+        {
+            case 1:
+                createMap();
+                break;
+
+            case 2:
+                showMap();
+                break;
+
+            case 3:
+                chooseStart();
+                break;
+
+            case 4:
+                findShortestRoutes();
+                break;
+
+            case 5:
+                showRoutes();
+                break;
+
+            case 6:
+                showDistances();
+                break;
+
+            case 7:
+                printf("\nProgram terminated.\n");
+                break;
+
+            default:
+                printf("\nInvalid choice. Try again.\n");
+        }
+
+    } while (choice != 7);
+
+    return 0;
+}
